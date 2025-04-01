@@ -1,0 +1,160 @@
+get_elements_of_order_two:=function(group) 
+  local els, ord2, el;
+  els:= Elements(group);
+  ord2:= [];
+  for el in els do
+    if Order(el) = 2 then
+      Add(ord2, el);
+    fi;
+  od;
+  return ord2;
+  end;
+
+
+get_valid_subs:=function(size, num)
+  local G, aut, g_iso, g_perm, g_iso_small, g_perm_small, valid_subs;
+  G:= SmallGroup(size, num);;
+  aut:= AutomorphismGroup(G);;
+  g_iso:=IsomorphismPermGroup(aut);;
+  g_perm:=Image(g_iso);;
+  g_iso_small:= SmallerDegreePermutationRepresentation(g_perm);;
+  g_perm_small:= Image(g_iso_small);;
+  valid_subs:= IsomorphicSubgroups(g_perm_small, G);
+  return valid_subs;
+  end;
+
+
+is_valid_inv:=function(inv, gen_pairs)
+  local pair;
+  for pair in gen_pairs do
+    if inv * pair[1] * inv = pair[1]^-1 and inv * pair[2] * inv = pair[2]^-1 then
+      return [true, pair];
+    fi;
+  od;
+  return [false, false];
+  end;
+
+
+get_valid_inv_for_all_subs:= function(ord2_els, valid_subs)
+  local valid_invs, inv, sub, map, group, size, els, 
+           gens, gen_set, done, valid, pair;
+  valid_invs:= [];
+  for sub in valid_subs do
+    map:= MappingGeneratorsImages(sub)[2];
+    group:= Group(map);
+    size:= Size(group);
+    els:= Elements(group);
+    gens:= get_all_generating_pairs(els, size);
+    gen_set:= Set(gens);
+    done:= false;
+    for inv in ord2_els do
+      if done then
+        break;
+      fi;    
+      for pair in gen_set do 
+        valid:= is_valid_inv(inv, [pair]);
+        if valid[1] then
+          Print("group:", map, inv, "inverts", valid[2], "\n");
+          Add(valid_invs, [map, inv, "inverts", valid[2]]);
+          done:= true;
+          break;
+        fi;
+      od;
+    od;
+  od;
+  return valid_invs;
+  end;
+
+
+reconstruct_sigma_sets_with_gens:=function(group, sigma_sets)
+  local sz, gens, g1, g2, els, new_sigma_sets, full_sigma, 
+        sigma, rep, cc, gen;
+  gens:= Set([]);
+  sz:= Size(group);
+  els:= Elements(group);
+  for g1 in els do
+    for g2 in els do
+      if Size(Group(g1, g2)) = sz then
+        Add(gens, g1);
+        Add(gens, g2);
+        gens:= Set(gens);
+      fi;
+    od;
+  od;
+  new_sigma_sets:= Set([]);
+  for sigma in sigma_sets do
+    full_sigma:= Set([]);
+    for rep in sigma do
+      cc:= ConjugacyClass(group, rep);
+      for gen in gens do
+        if gen in cc then
+          Add(full_sigma, gen);
+        fi;
+      od;
+      full_sigma:= Set(full_sigma);
+    od;
+    Add(new_sigma_sets, full_sigma);
+    new_sigma_sets:= Set(new_sigma_sets);
+  od;
+  return new_sigma_sets;
+  end;
+
+
+make_sigma_set_no_gens_from_generators:=function(gens, group)
+  local gen, ord_gen1, ord_gen2, ord_prod, i, j, k, prod, conj,
+  conj1, conj2, conj3, sigma_set, new_sigma;
+  for gen in gens do
+    sigma_set:= Set([]);
+    prod:= gen[1]*gen[2];
+    ord_gen1:= Order(gen[1]);
+    ord_gen2:= Order(gen[2]);
+    ord_prod:= Order(prod);
+    for i in [1..(ord_gen1 - 1)] do
+      conj:= Elements(ConjugacyClass(group, gen[1]^i))[1];
+      Add(sigma_set, conj);
+    od;
+    for j in [1..(ord_gen2 - 1)] do
+      conj2:= Elements(ConjugacyClass(group, gen[2]^j))[1];
+      Add(sigma_set, conj2);
+    od;
+    for k in [1..(ord_prod - 1)] do
+      conj3:= Elements(ConjugacyClass(group, prod^k))[1];
+      Add(sigma_set, conj3);
+    od;
+    new_sigma:= Set(sigma_set);
+  od;
+  return new_sigma;
+  end;
+
+
+get_sigma_set_generators:=function(sigma_set_gens, sigma_set_no_gens, group)
+  local gens, i, j, S;
+  gens:= [];
+  for i in sigma_set_gens do
+    for j in sigma_set_gens do
+      S:= make_sigma_set_no_gens_from_generators([[i, j]], group);
+      if S = sigma_set_no_gens and Size(Group([i, j])) = Size(group) then
+        Add(gens, [i, j]);
+      fi;
+    od;
+  od;
+  return gens;
+  end;
+
+
+get_valid_ord2_aut:=function(sets_sigma_gens, ord2_els)
+  local inv, valid, gens, gen_pairs, resp;
+  for inv in ord2_els do
+    valid:= [];
+    gens:= [];
+    for gen_pairs in sets_sigma_gens do
+      resp:= is_valid_inv(inv, gen_pairs);
+      Add(valid, resp[1]);
+      Add(gens, resp[2]);
+    od;
+    if ForAll(valid, x -> x) then
+      return [inv, " inverts ", gens];
+    fi;
+  od;
+  return "no valid involution";
+  end;
