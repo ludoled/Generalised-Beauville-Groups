@@ -1,0 +1,77 @@
+get_two_generated_p_groups:=function(prime, power)
+  local two_gen_list, group_size, groups_num, num, G;
+  two_gen_list:= [];
+  group_size:= prime^power;
+  groups_num:= NumberSmallGroups(group_size);
+  for num in [1..groups_num] do
+    G:= SmallGroup(group_size, num);
+    if Index(G, FrattiniSubgroup(G)) = prime^2 then
+      Append(two_gen_list, [[group_size, num]]);
+    fi;
+  od;
+  return two_gen_list;
+  end;
+
+
+prob_find_beauville_dimension:=function(group_size, start_n, end_n)
+  local groups_list, i, G, gen1, gen2, prod1, sigma_sets,
+  sigma1, j, k, l, conj1, conj2, conj3, new_sigma1, cl, nc, c, n, gn1, gn2,
+  gens, prd, sigma2, o, p, q, cnj1, cnj2, cnj3, new_sigma2, inter;
+  groups_list:= [];
+  for i in [start_n..end_n] do
+    G:= SmallGroup(group_size, i);
+    gen1:= G.1;
+    gen2:= G.2;
+    prod1:= gen1 * gen2;
+    sigma_sets:= Set([]);
+    sigma1:= Set([]);
+    for j in [1..(Order(gen1) - 1)] do
+      conj1:= Elements(ConjugacyClass(G, gen1^j))[1];
+      Add(sigma1, conj1);
+    od;
+    for k in [1..(Order(gen2) - 1)] do
+      conj2:= Elements(ConjugacyClass(G, gen2^k))[1];
+      Add(sigma1, conj2);
+    od;
+    for l in [1..(Order(prod1) - 1)] do
+      conj3:= Elements(ConjugacyClass(G, prod1^l))[1];
+      Add(sigma1, conj3);
+    od;
+    new_sigma1:= Set(sigma1);
+    Add(sigma_sets, new_sigma1);
+    sigma_sets:= Set(sigma_sets);
+    cl:= ConjugacyClasses(G);
+    nc:= NrConjugacyClasses(G);
+    for c in [2..nc] do
+      for n in [c..nc] do
+        gn1:= Representative(cl[c]);
+        gn2:= Representative(cl[n]);
+        gens:= [gn1, gn2];
+        if Size(Group(gens)) = Size(G) then
+          prd:= gn1 * gn2;
+          sigma2:= Set([]);
+          for o in [1..(Order(gn1) - 1)] do
+            cnj1:= Elements(ConjugacyClass(G, gn1^o))[1];
+            Add(sigma2, cnj1);
+          od;
+          for p in [1..(Order(gn2) - 1)] do
+            cnj2:= Elements(ConjugacyClass(G, gn2^p))[1];
+            Add(sigma2, cnj2);
+          od;
+          for q in [1..(Order(prd) - 1)] do
+            cnj3:= Elements(ConjugacyClass(G, prd^q))[1];
+            Add(sigma2, cnj3);
+          od;
+          new_sigma2:= Set(sigma2);
+          Add(sigma_sets, new_sigma2);
+          sigma_sets:= Set(sigma_sets);
+        fi;
+      od;
+    od;
+    inter:= Intersection(sigma_sets);
+    if inter = [] or inter = [[]] or inter = [()] or inter = [[()]] then
+      Add(groups_list, i);
+    fi;
+  od;
+  return groups_list;
+  end;
