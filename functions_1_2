@@ -1,0 +1,41 @@
+is_two_generated:=function(el_list, group_size)
+  local i, j, gens;
+  for i in el_list do
+    for j in el_list do
+      gens:= [];
+      Append(gens, [i, j]);
+      if Size(Group(gens)) = group_size then
+        return true;
+      fi;
+    od;
+  od;
+  return false;
+  end;
+
+
+  find_two_generated:=function(orders_list)
+  local two_gen_list, num, groups_num, i,
+  G, M, el, two_gen;
+  two_gen_list:= [];
+  for num in orders_list do
+    groups_num:= NumberSmallGroups(num);
+    for i in [1..groups_num] do
+      Print("started: ", [num, i], "\n");
+      G:= SmallGroup(num, i);
+      if IsSolubleGroup(G) then
+        M:= MinimalGeneratingSet(G);
+        if Size(M) = 2 then
+          Add(two_gen_list, [num, i]);
+          Print([num, i], "\n");
+        fi;
+      else el:=Elements(G);
+        two_gen:=is_two_generated(el, num);
+        if two_gen then
+          Add(two_gen_list, [num, i]);
+          Print([num, i], "\n");
+        fi;
+      fi;
+    od;
+  od;
+  return two_gen_list;
+  end;
