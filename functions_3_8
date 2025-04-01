@@ -1,0 +1,123 @@
+get_all_generating_pairs:=function(el_list, group_size)
+  local i, j, gens, gr_list;
+  gr_list:= [];
+  for i in el_list do
+    for j in el_list do
+      gens:= [];
+      Append(gens, [i, j]);
+      if Size(Group(gens)) = group_size then
+        Add(gr_list, Set([i, j]));
+      fi;
+    od;
+  od;
+  return gr_list;
+  end;
+
+
+  make_sigma_sets:=function(gens, group)
+  local gen, ord_gen1, ord_gen2, ord_prod, i, j, k, prod, conj,
+  conj1, conj2, conj3, sigma_set, sigma_sets, new_sigma;
+  sigma_sets:= Set([]);
+  for gen in gens do
+    sigma_set:= Set([]);
+    prod:= gen[1]*gen[2];
+    ord_gen1:= Order(gen[1]);
+    ord_gen2:= Order(gen[2]);
+    ord_prod:= Order(prod);
+    for i in [1..(ord_gen1 - 1)] do
+      conj:= Elements(ConjugacyClass(group, gen[1]^i))[1];
+      Add(sigma_set, conj);
+    od;
+    for j in [1..(ord_gen2 - 1)] do
+      conj2:= Elements(ConjugacyClass(group, gen[2]^j))[1];
+      Add(sigma_set, conj2);
+    od;
+    for k in [1..(ord_prod - 1)] do
+      conj3:= Elements(ConjugacyClass(group, prod^k))[1];
+      Add(sigma_set, conj3);
+    od;
+    new_sigma:= Set(sigma_set);
+    Add(sigma_sets, new_sigma);
+    sigma_sets:= Set(sigma_sets);
+  od;
+  return sigma_sets;
+  end;
+
+
+  get_all_intersections:=function(cmb_list)
+  local inter_list, i, inter;
+  inter_list:= [];
+  for i in cmb_list do
+    inter:= Intersection(i);
+    Append(inter_list, [inter]);
+  od;
+  return inter_list;
+  end;
+
+
+  is_nontrivial_beauville_dimension:=function(group_size, i)
+  local G, el, g, gen_set, S, len,
+  cmb, inters;
+  G:= SmallGroup(group_size, i);;
+  el:=Elements(G);;
+  g:= get_all_generating_pairs(el, group_size);;
+  gen_set:= Set(g);;
+  S:=make_sigma_sets(gen_set, G);;
+  len:= Length(S);
+  cmb:= Combinations(S, len);
+  inters:= get_all_intersections(cmb);
+  if inters = [[()]] or inters = [[]] then
+    return true;
+  fi;
+  return false;
+  end;
+
+
+  get_beauville_dimension_groups:=function(smallgroups_list)
+  local beauville_d_list, el, cyclic, beauville_d;
+  beauville_d_list:= [];
+  for el in smallgroups_list do
+    Print("started: ", el, "\n");
+    cyclic:= IsCyclic(SmallGroup(el[1], el[2]));
+    if not cyclic then
+      beauville_d:= is_nontrivial_beauville_dimension(el[1], el[2]);
+      if beauville_d then
+        Add(beauville_d_list, [el[1], el[2]]);
+        Print(el, " has non-trivial Beauville dimension", "\n");
+      fi;
+    fi;
+  od;
+  return beauville_d_list;
+  end;
+
+
+  get_exact_beauville_dimension:=function(groups)
+  local dims, group, G, el, g, gen_set, S, len,
+  dim_found, num, cmb, inters;
+  dims:= [];
+  for group in groups do
+    Print("started: ", group, "\n");  
+    G:= SmallGroup(group[1], group[2]);
+    el:=Elements(G);
+    g:= get_all_generating_pairs(el, group[1]);
+    gen_set:= Set(g);
+    S:=make_sigma_sets(gen_set, G);
+    len:= Length(S);
+    Print("length: ", len, "\n");
+    dim_found:= false;
+    for num in [2..len] do  
+      if not dim_found then
+        Print("started dim: ", num, "\n");
+        cmb:= Combinations(S, num);
+        inters:= get_all_intersections(cmb);
+        if [] in inters then
+          dim_found:= true;
+          Print("dim: ", num, "\n");
+          Append(dims, [num]);
+        fi;
+      fi;
+    od;
+  od;
+  return dims;
+  end;
+  
